@@ -3,7 +3,8 @@ WFHttp
 
 Simple, lightweight HTTP class for iOS
 
-## Methods
+METHODS
+=================================
 - **`+(id)sharedWFHttp;`**   
  Singleton instance to access manager from anywhere
 
@@ -33,4 +34,36 @@ Sends all enqueued requests
  Sends all enqueued requests
  Uses a slightly different implementation to support background mode once
  app has exited
+
+FEATURES
+=================================
+
+Http class wired to perform:
+
+1. GET
+2. POST
+3. Batch POST requests
+
+SAMPLE USE
+=================================
+1. GET
+```objective-c
+        [WFHttp GET:@"http://myUrl.com" completion:^(id result) {
+        
+            //do stuff with my results
+        }];
+
+```  
+2. POST
+```objective-c
+        [WFHttp POST:@"http://myUrl.com" object:myObject completion:^(id result) {
+            
+            //do stuff with my results
+        }];
+
+```   
+
+BUILT IN DEPENDENCIES
+=================================
+None
 
