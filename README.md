@@ -1,7 +1,7 @@
 WFHttp
 ======
 
-Simple, lightweight HTTP class for iOS
+Simple, lightweight HTTP class for iOS.
 
 SAMPLE USE
 =================================
@@ -11,7 +11,6 @@ SAMPLE USE
         
             //do stuff with my results
         }];
-
 ```  
 2. POST
 ```objective-c
@@ -19,7 +18,6 @@ SAMPLE USE
             
             //do stuff with my results
         }];
-
 ```   
 
 METHODS
