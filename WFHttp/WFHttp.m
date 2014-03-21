@@ -262,7 +262,7 @@
     @autoreleasepool {
         
         NSArray *allowed = @[@"@\"NSString\"", @"i", @"@\"NSNumber\""];
-        NSArray *objects = @[@"@\"Device\"", @"@\"User\"", @"@\"Ingredient\"", @"@\"Recipe\"", @"@\"GroceryList\"", @"@\"Event\"", @"@\"Follow\"", @"@\"Rating\"", @"@\"GroceryListItem\"", @"@\"Feed\"", @"@\"Device\""];
+        NSArray *objects = @[];
         NSArray *relationships = @[@"@\"NSMutableArray\""];
         
         //Create result dict
