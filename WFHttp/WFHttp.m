@@ -231,7 +231,7 @@
 }
 
 /*
- Increase the count of indicators by one
+ Show or hide indicator depending on active requests
  */
 +(void)handleNetworkIndicator{
     
