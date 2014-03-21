@@ -13,6 +13,10 @@
 
 //Holds requests waiting to be sent. Acts as a queque
 @property (nonatomic) NSMutableArray *requests;
+
+//makeshift tracks requests so we can show the nav spinner
+@property (nonatomic) NSMutableArray *requestsInProgress;
+
 @end
 
 @implementation WFHttp
@@ -33,6 +37,8 @@
     
     self = [super init];
     self.requests = [NSMutableArray new];
+    self.requestsInProgress = [NSMutableArray new];
+
     self.queueEmptyThreshold = 4;
     
     //subscribe to resignActive so we can send all requests that have been enqueued
@@ -44,6 +50,9 @@
 
 #pragma mark - Regular requests
 +(void)GET:(NSString *)url completion:(void (^)(id))completion{
+    
+    //increase requests count
+    [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
     
     //Init request
     NSMutableURLRequest *request = [NSMutableURLRequest
@@ -72,10 +81,19 @@
         //send completion
         completion(response);
         
+        //decrease requests count
+        [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+        [WFHttp handleNetworkIndicator];
+
     }];
+    
+    [WFHttp handleNetworkIndicator];
 }
 
 +(void)POST:(NSString *)url object:(id)object completion:(void (^)(id))completion{
+    
+    //increase requests count
+    [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
     
     //Init request
     NSMutableURLRequest *request = [NSMutableURLRequest
@@ -116,7 +134,15 @@
         
         //send completion
         completion(response);
+        
+        //decrease requests count
+        [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+        [WFHttp handleNetworkIndicator];
+
     }];
+    
+    [WFHttp handleNetworkIndicator];
+
 }
 #pragma mark - Q requests
 +(void)POSTToQueue:(NSString *)url object:(id)object{
@@ -157,6 +183,9 @@
     NSMutableArray *requests = [[WFHttp sharedWFHttp]requests];
     for (NSMutableURLRequest *request in requests) {
         
+        //increase requests count
+        [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
+        
         NSOperationQueue *queue = [[NSOperationQueue alloc] init];
         [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
             
@@ -173,11 +202,18 @@
             if (connectionError) {
                 NSLog(@"%@",connectionError);
             }
+            
+            //decrease requests count
+            [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+            [WFHttp handleNetworkIndicator];
+
         }];
     }
     
     //clear the q
     [requests removeAllObjects];
+    [WFHttp handleNetworkIndicator];
+
 }
 
 +(int)postRequestsInQueue{
@@ -192,6 +228,29 @@
 +(BOOL)string:(NSString *)original contains:(NSString *)string {
     NSRange range = [original rangeOfString:string];
     return (range.location != NSNotFound);
+}
+
+/*
+ Increase the count of indicators by one
+ */
++(void)handleNetworkIndicator{
+    
+    NSMutableArray *requestsInProgress = [[WFHttp sharedWFHttp]requestsInProgress];
+    
+    if (requestsInProgress.count>0) {
+        
+        //start indicator
+        if (![[UIApplication sharedApplication]isNetworkActivityIndicatorVisible]) {
+            [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
+        }
+
+    }else{
+        
+        //stop indicator
+        if ([[UIApplication sharedApplication]isNetworkActivityIndicatorVisible]) {
+            [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+        }
+    }
 }
 
 /*
