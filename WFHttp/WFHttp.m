@@ -7,6 +7,7 @@
 //
 
 #import "WFHttp.h"
+#import "Reachability.h"
 #import <objc/runtime.h>
 
 @interface WFHttp()
@@ -38,7 +39,7 @@
     self = [super init];
     self.requests = [NSMutableArray new];
     self.requestsInProgress = [NSMutableArray new];
-
+    
     self.queueEmptyThreshold = 4;
     
     //subscribe to resignActive so we can send all requests that have been enqueued
@@ -51,98 +52,106 @@
 #pragma mark - Regular requests
 +(void)GET:(NSString *)url completion:(void (^)(id))completion{
     
-    //increase requests count
-    [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
-    
-    //Init request
-    NSMutableURLRequest *request = [NSMutableURLRequest
-                                    requestWithURL:[NSURL URLWithString:url]];
-    
-    //Set headers
-    [request setHTTPMethod:@"GET"];
-    
-    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
-    [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+    if ([self internetReachable]) {
         
-        //get the http headers
-        NSHTTPURLResponse* newResp = (NSHTTPURLResponse*)response;
-        NSString *contentType = [newResp allHeaderFields][@"Content-Type"];
-        contentType = [contentType lowercaseString];
+        //increase requests count
+        [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
         
-        //serialize if content type is JSON
-        if ([WFHttp string:contentType contains:@"json"]) {
-            response = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
-        }
+        //Init request
+        NSMutableURLRequest *request = [NSMutableURLRequest
+                                        requestWithURL:[NSURL URLWithString:url]];
         
-        if (connectionError) {
-            NSLog(@"%@",connectionError);
-        }
+        //Set headers
+        [request setHTTPMethod:@"GET"];
         
-        //send completion
-        completion(response);
-        
-        //decrease requests count
-        [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+        NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+        [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+            
+            //get the http headers
+            NSHTTPURLResponse* newResp = (NSHTTPURLResponse*)response;
+            NSString *contentType = [newResp allHeaderFields][@"Content-Type"];
+            contentType = [contentType lowercaseString];
+            
+            //serialize if content type is JSON
+            if ([WFHttp string:contentType contains:@"json"] && response) {
+                response = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
+            }
+            
+            if (connectionError) {
+                NSLog(@"%@",connectionError);
+            }
+            
+            //send completion
+            completion(response);
+            
+            //decrease requests count
+            [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+            [WFHttp handleNetworkIndicator];
+            
+        }];
         [WFHttp handleNetworkIndicator];
-
-    }];
-    
-    [WFHttp handleNetworkIndicator];
+    }else{
+        NSLog(@"No internet connection");
+    }
 }
 
 +(void)POST:(NSString *)url object:(id)object completion:(void (^)(id))completion{
     
-    //increase requests count
-    [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
-    
-    //Init request
-    NSMutableURLRequest *request = [NSMutableURLRequest
-                                    requestWithURL:[NSURL URLWithString:url]];
-    
-    //Set headers
-    [request setHTTPMethod:@"POST"];
-    
-    
-    NSDictionary *parameters = NULL;
-    if ([object isKindOfClass:[NSDictionary class]]) {
-        parameters = object;
-    }else{
-        parameters = [WFHttp createObjectDictionaryFromObject:object];
+    if ([self internetReachable]) {
         
-    }
-    
-    NSData *userData = [NSJSONSerialization dataWithJSONObject:parameters options:NSJSONWritingPrettyPrinted error:nil];
-    
-    [request setHTTPBody:userData];
-    
-    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
-    [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+        //increase requests count
+        [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
         
-        //get the http headers
-        NSHTTPURLResponse* newResp = (NSHTTPURLResponse*)response;
-        NSString *contentType = [newResp allHeaderFields][@"Content-Type"];
-        contentType = [contentType lowercaseString];
+        //Init request
+        NSMutableURLRequest *request = [NSMutableURLRequest
+                                        requestWithURL:[NSURL URLWithString:url]];
         
-        //serialize if content type is JSON
-        if ([WFHttp string:contentType contains:@"json"]) {
-            response = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
+        //Set headers
+        [request setHTTPMethod:@"POST"];
+        
+        
+        NSDictionary *parameters = NULL;
+        if ([object isKindOfClass:[NSDictionary class]]) {
+            parameters = object;
+        }else{
+            parameters = [WFHttp createObjectDictionaryFromObject:object];
+            
         }
         
-        if (connectionError) {
-            NSLog(@"%@",connectionError);
-        }
+        NSData *userData = [NSJSONSerialization dataWithJSONObject:parameters options:NSJSONWritingPrettyPrinted error:nil];
         
-        //send completion
-        completion(response);
+        [request setHTTPBody:userData];
         
-        //decrease requests count
-        [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+        NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+        [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+            
+            //get the http headers
+            NSHTTPURLResponse* newResp = (NSHTTPURLResponse*)response;
+            NSString *contentType = [newResp allHeaderFields][@"Content-Type"];
+            contentType = [contentType lowercaseString];
+            
+            //serialize if content type is JSON
+            if ([WFHttp string:contentType contains:@"json"] && response) {
+                response = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
+            }
+            
+            if (connectionError) {
+                NSLog(@"%@",connectionError);
+            }
+            
+            //send completion
+            completion(response);
+            
+            //decrease requests count
+            [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+            [WFHttp handleNetworkIndicator];
+            
+        }];
+        
         [WFHttp handleNetworkIndicator];
-
-    }];
-    
-    [WFHttp handleNetworkIndicator];
-
+    }else{
+        NSLog(@"No internet connection");
+    }
 }
 #pragma mark - Q requests
 +(void)POSTToQueue:(NSString *)url object:(id)object{
@@ -180,40 +189,35 @@
 
 +(void)sendQueue{
     
-    NSMutableArray *requests = [[WFHttp sharedWFHttp]requests];
-    for (NSMutableURLRequest *request in requests) {
+    if ([self internetReachable]) {
         
-        //increase requests count
-        [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
+        NSMutableArray *requests = [[WFHttp sharedWFHttp]requests];
+        for (NSMutableURLRequest *request in requests) {
+            
+            //increase requests count
+            [[[WFHttp sharedWFHttp]requestsInProgress] addObject:@""];
+            
+            NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+            [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+                
+                
+                if (connectionError) {
+                    NSLog(@"%@",connectionError);
+                }
+                
+                //decrease requests count
+                [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
+                [WFHttp handleNetworkIndicator];
+                
+            }];
+        }
         
-        NSOperationQueue *queue = [[NSOperationQueue alloc] init];
-        [NSURLConnection sendAsynchronousRequest:request queue:queue completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-            
-            //get the http headers
-            NSHTTPURLResponse* newResp = (NSHTTPURLResponse*)response;
-            NSString *contentType = [newResp allHeaderFields][@"Content-Type"];
-            contentType = [contentType lowercaseString];
-            
-            //serialize if content type is JSON
-            if ([WFHttp string:contentType contains:@"json"]) {
-                response = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
-            }
-            
-            if (connectionError) {
-                NSLog(@"%@",connectionError);
-            }
-            
-            //decrease requests count
-            [[[WFHttp sharedWFHttp]requestsInProgress] removeLastObject];
-            [WFHttp handleNetworkIndicator];
-
-        }];
+        //clear the q
+        [requests removeAllObjects];
+        [WFHttp handleNetworkIndicator];
+    }else{
+        NSLog(@"No internet connection");
     }
-    
-    //clear the q
-    [requests removeAllObjects];
-    [WFHttp handleNetworkIndicator];
-
 }
 
 +(int)postRequestsInQueue{
@@ -231,7 +235,7 @@
 }
 
 /*
- Show or hide indicator depending on active requests
+ Increase the count of indicators by one
  */
 +(void)handleNetworkIndicator{
     
@@ -243,7 +247,7 @@
         if (![[UIApplication sharedApplication]isNetworkActivityIndicatorVisible]) {
             [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:YES];
         }
-
+        
     }else{
         
         //stop indicator
@@ -262,7 +266,7 @@
     @autoreleasepool {
         
         NSArray *allowed = @[@"@\"NSString\"", @"i", @"@\"NSNumber\""];
-        NSArray *objects = @[@"@\"Device\"", @"@\"User\"", @"@\"Ingredient\"", @"@\"Recipe\"", @"@\"GroceryList\"", @"@\"Event\"", @"@\"Follow\"", @"@\"Rating\"", @"@\"GroceryListItem\"", @"@\"Feed\"", @"@\"Device\""];
+        NSArray *objects = @[];
         NSArray *relationships = @[@"@\"NSMutableArray\""];
         
         //Create result dict
@@ -327,6 +331,22 @@
         
         //Return the dictionary
         return result;
+    }
+}
+
+#pragma mark - Reachability
+
+/*
+ Use reachability to check internet connection. If any is available, return YES
+ */
++ (BOOL)internetReachable{
+    
+    NetworkStatus netStatus = [[Reachability reachabilityForInternetConnection] currentReachabilityStatus];
+    
+    if (netStatus == NotReachable) {
+        return NO;
+    }else{
+        return YES;
     }
 }
 
