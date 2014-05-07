@@ -63,5 +63,5 @@ Http class wired to perform:
 
 BUILT IN DEPENDENCIES
 =================================
-None
+[Reachability](https://developer.apple.com/Library/ios/samplecode/Reachability/Introduction/Intro.html)
 
