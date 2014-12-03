@@ -17,28 +17,54 @@
 @property (assign) int queueEmptyThreshold;
 
 /*
- Singleton instance to access manager from anywhere
+Determines how cookies will be handled.
+Defaults to NSHTTPCookieAcceptPolicyAlways
+*/
+@property (assign) NSHTTPCookieAcceptPolicy cookiePolicy;
+
+#pragma mark - Session management
+
+/*
+ If cookiePolicy is set to NSHTTPCookieAcceptPolicyAlways, then
+ this method will let you know the status of the session.
+ If expired, the session cookie is no longer good.
  */
-+(id)sharedWFHttp;
++ (BOOL)isSessionCookieExpired;
+
+/*
+Removes all saved cookies
+*/
++ (void)clearCookies;
+
+/**
+ Modifies the cookie policy
+ */
++(void)setCookiePolicy:(NSHTTPCookieAcceptPolicy)cookiePolicy;
 
 #pragma mark - Standard requests
 /*
  Basic GET request. Results return in the completion block
  */
-+(void)GET:(NSString*)url completion:(void(^)(id result))completion;
++(void)GET:(NSString*)url optionalParameters:(NSDictionary *)parameters optionalHTTPHeaders:(NSDictionary *)headers completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion;
 
 /*
  Basic POST request. Results return in the completion block
  Object can be anything (array, dictionary, NSObject, and more)
  */
-+(void)POST:(NSString*)url object:(id)object completion:(void(^)(id result))completion;
++(void)POST:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion;
+
+/*
+ Basic PUT request. Results return in the completion block
+ Object can be anything (array, dictionary, NSObject, and more)
+ */
++(void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion;
 
 #pragma mark - Queue requests
 /*
  Create a post request but instead of sending immediately, it adds to a queue to be sent after
  the threshold specified
  */
-+(void)POSTToQueue:(NSString *)url object:(id)object;
++(void)POSTToQueue:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object;
 
 /*
  Sends all enqueued requests
@@ -50,7 +76,14 @@
  */
 +(int)postRequestsInQueue;
 
-#pragma mark - Instance
+#pragma mark - Parsers
+
+/*
+Serializes an objective-C object
+*/
++(NSDictionary *)createObjectDictionaryFromObject:(id)object;
+
+#pragma mark - Instance methods
 
 /*
  Sends all enqueued requests
@@ -58,6 +91,7 @@
  app has exited
  */
 -(void)purgeQueue;
+
 
 @end
 
