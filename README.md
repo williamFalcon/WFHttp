@@ -43,13 +43,13 @@ METHODS
  Basic POST request. Results return in the completion block.   
  Object can be anything (array, dictionary, NSObject, and more).   
 
- - **`+ (void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
+- **`+ (void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
  Basic PUT request. Results return in the completion block.   
  Object is an NSDictionary that represents a form.    
  Adding an image to the dictionary results in sending the image.   
  Using id as type to be compatible with swift.   
 
-  - **`+(void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
+- **`+(void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
  Basic PUT request. Results return in the completion block.   
  Object can be anything (array, dictionary, NSObject, and more).   
 
