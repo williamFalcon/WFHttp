@@ -54,6 +54,14 @@ Removes all saved cookies
 +(void)POST:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion;
 
 /*
+ Basic POST request. Used for multipart form. To post image, add image to form dictionary
+ 
+ Ex: To post image, add an image parameter to the dictionary
+ */
++ (void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion;
+
+
+/*
  Basic PUT request. Results return in the completion block
  Object can be anything (array, dictionary, NSObject, and more)
  */

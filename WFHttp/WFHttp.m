@@ -11,8 +11,15 @@
 #import <objc/runtime.h>
 @import UIKit;
 
-BOOL LOGGING_ENABLED = true;
-NSString *POLICY_KEY = @"WFHTTP cookie policy";
+static BOOL LOGGING_ENABLED = true;
+static BOOL PRINT_POST_JSON_BEFORE_SENDING = true;
+static NSString *MULTIPART_FORM_BOUNDARY = @"w3f7h8t9t0p";
+static NSString *POLICY_KEY = @"WFHTTP cookie policy";
+
+typedef NS_ENUM(int, WFHTTPContentType) {
+    WFHTTPContentTypeJSON,
+    WFHTTPContentTypeMultipartForm
+};
 
 @interface WFHttp()
 
@@ -111,7 +118,7 @@ NSString *POLICY_KEY = @"WFHTTP cookie policy";
             completion(jsonObj, newResp.statusCode, newResp);
             
             if (LOGGING_ENABLED) {
-                NSLog(@"Status Code: %li\n", (long)newResp.statusCode);
+                NSLog(@"\n------------------------\nRequest:%@\nStatus Code: %li\nMessage:%@\n------------------------", url ,(long)newResp.statusCode, jsonObj);
             }
             
             //decrease requests count
@@ -126,11 +133,15 @@ NSString *POLICY_KEY = @"WFHTTP cookie policy";
 }
 
 +(void)POST:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void (^)(id, NSInteger, NSHTTPURLResponse *))completion {
-    [WFHttp updateRequest:url optionalHTTPHeaders:headers object:object httpMethod:@"POST" completion:completion];
+    [WFHttp updateRequest:url optionalHTTPHeaders:headers object:object httpMethod:@"POST" contentType:WFHTTPContentTypeJSON completion:completion];
+}
+
++(void)PUT:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void (^)(id, NSInteger, NSHTTPURLResponse *))completion {
+    [WFHttp updateRequest:url optionalHTTPHeaders:headers object:form httpMethod:@"PUT" contentType:WFHTTPContentTypeMultipartForm completion:completion];
 }
 
 +(void)PUT:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void (^)(id, NSInteger, NSHTTPURLResponse *))completion {
-    [WFHttp updateRequest:url optionalHTTPHeaders:headers object:object httpMethod:@"PUT" completion:completion];
+    [WFHttp updateRequest:url optionalHTTPHeaders:headers object:object httpMethod:@"PUT" contentType:WFHTTPContentTypeJSON completion:completion];
 }
 
 #pragma mark - Q requests
@@ -239,7 +250,8 @@ NSString *POLICY_KEY = @"WFHTTP cookie policy";
 }
 
 #pragma mark - Utilities
-+(void)updateRequest:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object httpMethod:(NSString *)method completion:(void (^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion{
++(void)updateRequest:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object httpMethod:(NSString *)method contentType:(WFHTTPContentType )contentType completion:(void (^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion{
+    
     if ([self internetReachable]) {
         
         //increase requests count
@@ -253,18 +265,21 @@ NSString *POLICY_KEY = @"WFHTTP cookie policy";
         [request setHTTPMethod:method];
         [WFHttp addHeaders:headers toRequest:request];
         
-        NSDictionary *parameters = NULL;
-        if ([object isKindOfClass:[NSDictionary class]]) {
-            parameters = object;
-        }else{
-            parameters = [WFHttp createObjectDictionaryFromObject:object];
+        //set request content according to what was requested
+        switch (contentType) {
+            case WFHTTPContentTypeJSON:
+                [WFHttp formatRequestForJSON:request object:object];
+                break;
+                
+            case WFHTTPContentTypeMultipartForm:
+                [WFHttp formatRequestForMultipartForm:request object:object];
+                break;
+                
+            default:
+                break;
         }
         
-        NSData *userData = [NSJSONSerialization dataWithJSONObject:parameters options:NSJSONWritingPrettyPrinted error:nil];
-        
-        [request setHTTPBody:userData];
-        [request setValue:@"application/json" forHTTPHeaderField:@"content-type"];
-        
+        //print logs if needed
         if (LOGGING_ENABLED) {
             NSLog(@"\n\nWFHTTP-%@: %@",request.HTTPMethod ,url);
         }
@@ -287,7 +302,7 @@ NSString *POLICY_KEY = @"WFHTTP cookie policy";
             }
             
             if (LOGGING_ENABLED) {
-                NSLog(@"Status Code: %li\n", (long)newResp.statusCode);
+                NSLog(@"\n------------------------\nRequest:%@\nStatus Code: %li\nMessage:%@\n------------------------", url ,(long)newResp.statusCode, response);
             }
             
             //send completion
@@ -436,7 +451,7 @@ NSString *POLICY_KEY = @"WFHTTP cookie policy";
         
         NSString *result = [parametrizedUrl substringToIndex:parametrizedUrl.length-1];
         result = [result stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-
+        
         return result;
     }else {
         return url;
@@ -452,11 +467,85 @@ NSString *POLICY_KEY = @"WFHTTP cookie policy";
     
     NetworkStatus netStatus = [[Reachability reachabilityForInternetConnection] currentReachabilityStatus];
     
+    //post reachability notification so listeners can respond if network changed
+    [[NSNotificationCenter defaultCenter]postNotificationName:kReachabilityChangedNotification object:nil];
+    
     if (netStatus == NotReachable) {
         return NO;
     }else{
         return YES;
     }
+}
+
+#pragma mark - Request formatting Utils
+
++ (void)formatRequestForJSON:(NSMutableURLRequest *)request object:(id)object {
+    
+    //convert obj to JSON
+    NSDictionary *parameters = NULL;
+    if ([object isKindOfClass:[NSDictionary class]]) {
+        parameters = object;
+    }else{
+        parameters = [WFHttp createObjectDictionaryFromObject:object];
+    }
+    
+    //create JSON
+    NSData *userData = [NSJSONSerialization dataWithJSONObject:parameters options:NSJSONWritingPrettyPrinted error:nil];
+    [request setHTTPBody:userData];
+    [request setValue:@"application/json" forHTTPHeaderField:@"content-type"];
+    
+    //print JSON before post if requested
+    if (PRINT_POST_JSON_BEFORE_SENDING) {
+        NSString* jsonString = [[NSString alloc] initWithData:userData encoding:NSUTF8StringEncoding];
+        NSLog(@"jsonString: %@", jsonString);
+    }
+}
+
++ (void)formatRequestForMultipartForm:(NSMutableURLRequest *)request object:(NSDictionary *)parameters {
+    
+    NSString *FileParamConstant = @"uploadFile";
+    
+    // set Content-Type in HTTP header
+    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", MULTIPART_FORM_BOUNDARY];
+    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
+    
+    // post body
+    NSMutableData *body = [NSMutableData data];
+    
+    // add params (all params are strings)
+    for (NSString *param in parameters) {
+        
+        id value = parameters[param];
+        
+        //format all strings in the form
+        if ([value isKindOfClass:[NSString class]]) {
+            [body appendData:[[NSString stringWithFormat:@"--%@\r\n", MULTIPART_FORM_BOUNDARY] dataUsingEncoding:NSUTF8StringEncoding]];
+            [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
+            [body appendData:[[NSString stringWithFormat:@"%@\r\n", value] dataUsingEncoding:NSUTF8StringEncoding]];
+        }
+        
+        //format images in the form
+        if ([value isKindOfClass:[UIImage class]]) {
+            UIImage *imageToPost = value;
+            
+            // add image data
+            NSData *imageData = UIImageJPEGRepresentation(imageToPost, 1.0);
+            if (imageData) {
+                NSString *imageName = param;
+                [body appendData:[[NSString stringWithFormat:@"--%@\r\n", MULTIPART_FORM_BOUNDARY] dataUsingEncoding:NSUTF8StringEncoding]];
+                [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", FileParamConstant, imageName] dataUsingEncoding:NSUTF8StringEncoding]];
+                [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+                [body appendData:imageData];
+                [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+            }
+            
+            [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", MULTIPART_FORM_BOUNDARY] dataUsingEncoding:NSUTF8StringEncoding]];
+        }
+    }
+    
+    // setting the body of the post to the reqeust
+    [request setHTTPBody:body];
+    
 }
 
 #pragma mark - Instance methods
