@@ -3,8 +3,7 @@ WFHttp
 
 Simple, lightweight HTTP class for iOS.
 
-## TO INSTALL
-Add line to podfile. 
+## COCOAPODS
 ```
 pod 'WFHttp'
 ```
