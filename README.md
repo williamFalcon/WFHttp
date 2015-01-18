@@ -75,8 +75,7 @@ Sends all enqueued requests
  Uses a slightly different implementation to support background mode once
  app has exited
 
-FEATURES
-=================================
+##FEATURES
 
 Http class wired to perform:
 
@@ -84,7 +83,6 @@ Http class wired to perform:
 2. POST
 3. Batch POST requests
 
-BUILT IN DEPENDENCIES
-=================================
+## BUILT IN DEPENDENCIES
 [Reachability](https://developer.apple.com/Library/ios/samplecode/Reachability/Introduction/Intro.html)
 
