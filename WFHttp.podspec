@@ -11,5 +11,5 @@ Pod::Spec.new do |s|
   s.public_header_files = 'WFHttp/Public/**/*.{h,m}'
   s.requires_arc = true
   s.platform = :ios, '7.0'
-  s.framework = 'UIKit'
+  s.dependency = 'Reachability'
 end
