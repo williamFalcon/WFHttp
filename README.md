@@ -3,8 +3,13 @@ WFHttp
 
 Simple, lightweight HTTP class for iOS.
 
-SAMPLE USE
-=================================
+## To Install
+Add line to podfile. 
+```
+pod 'WFHttp'
+```
+
+##SAMPLE USE
 1. GET
 ```objective-c
         [WFHttp GET:@"http://myUrl.com" optionalParameters:nil optionalHTTPHeaders:nil completion:^(id result, NSInteger statusCode, NSHTTPURLResponse *response) {
@@ -30,8 +35,7 @@ SAMPLE USE
     	}];
 ```   
 
-METHODS
-=================================
+##METHODS
 - **`+(id)sharedWFHttp;`**   
  Singleton instance to access manager from anywhere
 
