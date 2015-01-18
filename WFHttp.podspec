@@ -10,6 +10,6 @@ Pod::Spec.new do |s|
   s.source_files = 'WFHttp/**/*.{h,m}'
   s.public_header_files = 'WFHttp/Public/**/*.{h,m}'
   s.requires_arc = true
+  s.dependency 'Reachability'
   s.platform = :ios, '7.0'
-  s.dependency = 'Reachability'
 end
