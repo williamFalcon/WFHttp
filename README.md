@@ -36,41 +36,59 @@ pod 'WFHttp'
 ```   
 
 ##METHODS
-- **`+(id)sharedWFHttp;`**   
+```
++(id)sharedWFHttp;
+```    
  Singleton instance to access manager from anywhere
 
-- **`+(void)GET:(NSString*)url optionalParameters:(NSDictionary *)parameters optionalHTTPHeaders:(NSDictionary *)headers completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
+```
++(void)GET:(NSString*)url optionalParameters:(NSDictionary *)parameters optionalHTTPHeaders:(NSDictionary *)headers completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion
+```   
  Basic GET request. Results return in the completion block
 
 
-- **`+(void)POST:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
+```
++(void)POST:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion
+```   
  Basic POST request. Results return in the completion block.   
  Object can be anything (array, dictionary, NSObject, and more).   
 
-- **`+ (void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
+```
++ (void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion
+```   
  Basic PUT request. Results return in the completion block.   
  Object is an NSDictionary that represents a form.    
  Adding an image to the dictionary results in sending the image.   
  Using id as type to be compatible with swift.   
 
-- **`+(void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion`**   
+```
++(void)PUT:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion
+```   
  Basic PUT request. Results return in the completion block.   
  Object can be anything (array, dictionary, NSObject, and more).   
 
-- **`+(void)POSTToQueue:(NSString *)url object:(id)object`**   
+```
++(void)POSTToQueue:(NSString *)url object:(id)object
+```   
  Create a post request but instead of sending immediately, it adds to a queue to be sent after.   
  the threshold specified.   
 
 
-- **`+(void)sendQueue`**   
+```
++(void)sendQueue
+```   
 Sends all enqueued requests
 
 
-- **`+(int)postRequestsInQueue`**   
+```
++(int)postRequestsInQueue
+```   
  Returns the count of requests waiting to be sent
 
 
-- **`-(void)purgeQueue`**   
+```
+-(void)purgeQueue
+```   
  Sends all enqueued requests
  Uses a slightly different implementation to support background mode once
  app has exited
