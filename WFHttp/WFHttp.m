@@ -8,12 +8,12 @@
 
 #import "WFHttp.h"
 #import "Reachability.h"
+#import "WFHttp+FormBuilder.h"
 #import <objc/runtime.h>
 @import UIKit;
 
 static BOOL LOGGING_ENABLED = true;
 static BOOL PRINT_POST_JSON_BEFORE_SENDING = true;
-static NSString *MULTIPART_FORM_BOUNDARY = @"w3f7h8t9t0p";
 static NSString *POLICY_KEY = @"WFHTTP cookie policy";
 
 typedef NS_ENUM(int, WFHTTPContentType) {
@@ -138,6 +138,10 @@ typedef NS_ENUM(int, WFHTTPContentType) {
 
 +(void)PUT:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void (^)(id, NSInteger, NSHTTPURLResponse *))completion {
     [WFHttp updateRequest:url optionalHTTPHeaders:headers object:form httpMethod:@"PUT" contentType:WFHTTPContentTypeMultipartForm completion:completion];
+}
+
++(void)POST:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void (^)(id, NSInteger, NSHTTPURLResponse *))completion {
+    [WFHttp updateRequest:url optionalHTTPHeaders:headers object:form httpMethod:@"POST" contentType:WFHTTPContentTypeMultipartForm completion:completion];
 }
 
 +(void)PUT:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void (^)(id, NSInteger, NSHTTPURLResponse *))completion {
@@ -501,52 +505,7 @@ typedef NS_ENUM(int, WFHTTPContentType) {
     }
 }
 
-+ (void)formatRequestForMultipartForm:(NSMutableURLRequest *)request object:(NSDictionary *)parameters {
-    
-    NSString *FileParamConstant = @"uploadFile";
-    
-    // set Content-Type in HTTP header
-    NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", MULTIPART_FORM_BOUNDARY];
-    [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
-    
-    // post body
-    NSMutableData *body = [NSMutableData data];
-    
-    // add params (all params are strings)
-    for (NSString *param in parameters) {
-        
-        id value = parameters[param];
-        
-        //format all strings in the form
-        if ([value isKindOfClass:[NSString class]]) {
-            [body appendData:[[NSString stringWithFormat:@"--%@\r\n", MULTIPART_FORM_BOUNDARY] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", param] dataUsingEncoding:NSUTF8StringEncoding]];
-            [body appendData:[[NSString stringWithFormat:@"%@\r\n", value] dataUsingEncoding:NSUTF8StringEncoding]];
-        }
-        
-        //format images in the form
-        if ([value isKindOfClass:[UIImage class]]) {
-            UIImage *imageToPost = value;
-            
-            // add image data
-            NSData *imageData = UIImageJPEGRepresentation(imageToPost, 1.0);
-            if (imageData) {
-                NSString *imageName = param;
-                [body appendData:[[NSString stringWithFormat:@"--%@\r\n", MULTIPART_FORM_BOUNDARY] dataUsingEncoding:NSUTF8StringEncoding]];
-                [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"\r\n", FileParamConstant, imageName] dataUsingEncoding:NSUTF8StringEncoding]];
-                [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
-                [body appendData:imageData];
-                [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
-            }
-            
-            [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", MULTIPART_FORM_BOUNDARY] dataUsingEncoding:NSUTF8StringEncoding]];
-        }
-    }
-    
-    // setting the body of the post to the reqeust
-    [request setHTTPBody:body];
-    
-}
+
 
 #pragma mark - Instance methods
 -(void)purgeQueue{

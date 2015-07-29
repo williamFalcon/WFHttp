@@ -53,6 +53,8 @@ Removes all saved cookies
  */
 +(void)POST:(NSString*)url optionalHTTPHeaders:(NSDictionary *)headers object:(id)object completion:(void(^)(id result, NSInteger statusCode, NSHTTPURLResponse *response))completion;
 
++(void)POST:(NSString *)url optionalHTTPHeaders:(NSDictionary *)headers form:(id)form completion:(void (^)(id, NSInteger, NSHTTPURLResponse *))completion;
+
 /*
  Basic POST request. Used for multipart form. To post image, add image to form dictionary
  
