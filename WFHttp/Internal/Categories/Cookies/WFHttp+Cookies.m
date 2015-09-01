@@ -7,7 +7,7 @@
 //
 
 #import "WFHttp+Cookies.h"
-
+#import "WFHttp+Singleton.h"
 
 @implementation WFHttp (Cookies)
 
